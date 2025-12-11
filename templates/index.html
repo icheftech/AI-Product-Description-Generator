@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AI Product Description Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    />
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a, #020617);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            color: #e5e7eb;
+        }
+
+        .app-card {
+            border-radius: 1.25rem;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .app-header {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .badge-tone {
+            font-size: 0.75rem;
+        }
+
+        .result-box {
+            background-color: #020617;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            padding: 1rem;
+            white-space: pre-wrap;
+            color: #e5e7eb;
+            min-height: 150px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #e5e7eb;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #020617;
+            border-color: rgba(148, 163, 184, 0.7);
+            color: #e5e7eb;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #020617;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.25);
+            color: #e5e7eb;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #38bdf8, #6366f1);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+        }
+
+        .btn-outline-light {
+            border-color: #94a3b8;
+            color: #e5e7eb;
+        }
+
+        .btn-outline-light:hover {
+            background-color: #e5e7eb;
+            color: #020617;
+        }
+
+        .tone-helper {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #22c55e, #a3e635);
+            display: inline-block;
+            margin-right: 0.4rem;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="card app-card">
+                    <div class="card-header app-header px-4 py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="logo-dot"></span>
+                                <h1 class="h5 mb-0 text-light">Retail AI Copy Studio</h1>
+                            </div>
+                            <p class="mb-0 text-muted small">
+                                Generate persuasive, tone-aware product descriptions in seconds.
+                            </p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-info badge-tone">
+                            Module 06 – AI in Retail
+                        </span>
+                    </div>
+
+                    <div class="card-body px-4 py-4">
+                        <!-- Flash messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                <div class="mb-3">
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show mb-2" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" novalidate>
+                            <div class="mb-3">
+                                <label for="product_name" class="form-label">Product name</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="product_name"
+                                    name="product_name"
+                                    placeholder="e.g. Wireless Noise-Cancelling Headphones"
+                                    value="{{ product_name }}"
+                                    required
+                                />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="keywords" class="form-label">Keywords (comma-separated)</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="keywords"
+                                    name="keywords"
+                                    placeholder="e.g. Bluetooth 5.3, 30-hour battery, comfort-fit, fast charging"
+                                    value="{{ keywords }}"
+                                />
+                                <div class="form-text tone-helper">
+                                    These will be woven naturally into the description (optional but recommended).
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="tone" class="form-label">Tone</label>
+                                <select
+                                    id="tone"
+                                    name="tone"
+                                    class="form-select"
+                                    aria-label="Select tone"
+                                >
+                                    {% for key, tone in tones.items() %}
+                                        <option value="{{ key }}" {% if key == selected_tone %}selected{% endif %}>
+                                            {{ tone.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text tone-helper">
+                                    Match your copy to different customer segments – casual shoppers, professionals, tech enthusiasts, or luxury buyers.
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    Generate Description
+                                </button>
+                                <span class="footer-text">
+                                    Powered by OpenAI · Flask Web App
+                                </span>
+                            </div>
+                        </form>
+
+                        <hr class="text-secondary" />
+
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h6 mb-0 text-light">Generated Description</h2>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-light btn-sm"
+                                    id="copyButton"
+                                    {% if not generated_text %}disabled{% endif %}
+                                >
+                                    Copy to Clipboard
+                                </button>
+                            </div>
+                            <div id="generatedText" class="result-box">
+                                {% if generated_text %}
+                                    {{ generated_text }}
+                                {% else %}
+                                    <span class="text-muted">
+                                        Your AI-generated product description will appear here after you submit the form.
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer text-center py-3">
+                        <span class="footer-text">
+                            Built for Module 06 – AI in Retail &middot; Flask + OpenAI API
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (for alerts etc.) -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"
+    ></script>
+
+    <script>
+        // Copy to clipboard functionality
+        const copyButton = document.getElementById("copyButton");
+        const generatedTextElement = document.getElementById("generatedText");
+
+        if (copyButton) {
+            copyButton.addEventListener("click", function () {
+                const text = generatedTextElement.innerText || generatedTextElement.textContent;
+                if (!text || text.trim().length === 0) {
+                    return;
+                }
+
+                navigator.clipboard.writeText(text.trim()).then(
+                    function () {
+                        copyButton.textContent = "Copied!";
+                        setTimeout(function () {
+                            copyButton.textContent = "Copy to Clipboard";
+                        }, 1500);
+                    },
+                    function () {
+                        copyButton.textContent = "Failed to copy";
+                        setTimeout(function () {
+                            copyButton.textContent = "Copy to Clipboard";
+                        }, 1500);
+                    }
+                );
+            });
+        }
+    </script>
+</body>
+</html>
